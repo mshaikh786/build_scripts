@@ -8,7 +8,7 @@ function set_env(){
 	module load /sw/hidden/modulefiles/compilers/python/3.6.2
 	module load gcc/6.4.0
 	module load cuda/10.2.89
-	module load nccl/2.4.8.1
+	module load nccl/2.6.4.1
 	module load openmpi-gpu/3.1.2_cuda102
 	module load pyyaml/5.2
 	module load mkl/2019
@@ -23,32 +23,38 @@ function get_source(){
 		git submodule update --init --recursive
 	fi
 }
-
 function build(){
 	cd ${BLD_DIR}
 	if [ -d "./build" ]
 	 then
 		rm -rf ./build/*
 	fi
-	export CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ 
-	export MPICC=mpicc MPICXX=mpicxx
-	export REL_WITH_DEB_INFO=ON
-	export USE_CUDA=ON USE_CUDNN=ON USE_NCCL=ON USE_SYSTEM_NCCL=ON
-	export USE_OPENMP=ON  USE_MKLDNN=ON USE_MKLDNN_CBLAS=ON BLAS=MKL
-	export USE_DISTRIBUTED=ON
-	export INTEL_MKL_DIR=$MKLROOT USE_GLOO=0 USE_ROCM=0
-	export PYTORCH_BUILD_VERSION=${TORCH_VERSION} PYTORCH_BUILD_NUMBER=1
-	export CUDA_HOME=${CUDATOOLKIT_HOME}
-	export TORCH_CUDA_ARCH_LIST="6.0;7.0"
-	export CMAKE_LIBRARY_PATH="${MKLROOT}/lib/intel64" 
-	export CMAKE_INCLUDE_PATH="${MKLROOT}/include"
-	export CMAKE_CXX_FLAGS="-I${CUDATOOLKIT_HOME}/include -I${NCCL_HOME}/include"
-	export CMAKE_C_FLAGS="-I${CUDATOOLKIT_HOME}/include -I${NCCL_HOME}/include"
-	export NCCL_INCLUDE_DIR="${NCCL_HOME}/include" NCCL_LIB_DIR="${NCCL_HOME}/lib"
+	mkdir -p build
+	cd build
+	export CC=gcc CXX=g++ MPICC=mpicc MPICXX=mpicxx
+	cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+	-DUSE_CUDA=ON -DUSE_CUDNN=ON -DUSE_NCCL=ON -DUSE_SYSTEM_NCCL=ON \
+	-DUSE_OPENMP=ON  -DUSE_MKLDNN=ON -DUSE_MKLDNN_CBLAS=ON -DBLAS=MKL \
+	-DUSE_DISTRIBUTED=ON \
+	-DINTEL_MKL_DIR=$MKLROOT -DUSE_GLOO=0 -DUSE_ROCM=0 \
+	-DPYTORCH_BUILD_VERSION=${TORCH_VERSION} -DPYTORCH_BUILD_NUMBER=1 \
+	-DCUDA_HOME=${CUDATOOLKIT_HOME} \
+	-DTORCH_CUDA_ARCH_LIST="6.0;7.0" \
+	-DCMAKE_EXE_LINK_FLAGS=-L ${BLD_DIR}/build/lib \
+	-DCMAKE_INCLUDE_PATH="${MKLROOT}/include" \
+	-DCMAKE_CXX_FLAGS="-I${CUDATOOLKIT_HOME}/include -I${NCCL_HOME}/include" \
+	-DCMAKE_C_FLAGS="-I${CUDATOOLKIT_HOME}/include -I${NCCL_HOME}/include" \
+	-DNCCL_INCLUDE_DIR="${NCCL_HOME}/include" -DNCCL_LIB_DIR="${NCCL_HOME}/lib" \
+	-DARCH_OPT_FLAGS="-ax=CORE_AVX512" \
+	-DCMAKE_INSTALL_PREFIX=$PREFIX \
+	..
 
-	export MAX_JOBS=20
-#	python setup.py build --verbose
-	python setup.py install --prefix=$PREFIX
+	
+	make -j 32 VERBOSE=1
+        cd ..
+
+	LDFLAGS=$(echo -L${BLD_DIR}/build/lib)
+	LDFLAGS=$LDFLAGS python setup.py install --prefix=$PREFIX
 }
 
 ARG=$1
@@ -61,6 +67,7 @@ elif [ ${ARG} = "build" ]
  then
 	set_env
 	build
-fi
+
+fi 
 
 
