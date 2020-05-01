@@ -1,9 +1,21 @@
 #!/bin/bash
-export TORCH_VERSION=1.3.1
-export SOFTWARE_ROOT="/project/k01/shaima0d/software/cle7up01"
-export BLD_DIR="${SOFTWARE_ROOT}/build/pytorch-${TORCH_VERSION}"
-export PREFIX="${SOFTWARE_ROOT}/apps/pytorch/${TORCH_VERSION}_mkl"
-export MODULEPATH=$SOFTWARE_ROOT/modulefiles:$MODULEPATH
+
+APP_NAME="pytorch"
+
+if [ $# -eq 0 ]; then
+	source optargs.sh -h
+	exit
+else
+	source optargs.sh $@
+fi
+
+export TORCH_VERSION=$VERSION
+export SOFTWARE_ROOT=$BLD_ROOT
+export BLD_DIR="${SOFTWARE_ROOT}/build/${APP_NAME}-${TORCH_VERSION}"
+export PREFIX=$PREFIX
+export MODULEPATH=$MODULEPATH_PREPEND:$MODULEPATH
+
+
 function set_env {
 module load cmake
 module swap PrgEnv-$(echo ${PE_ENV}|tr [:upper:] [:lower:]) PrgEnv-gnu
@@ -17,7 +29,7 @@ export CRAYPE_LINK_TYPE=dynamic
 
 function get_source {
 echo "Running git clone recipe"
-     	git clone --recursive -b v${TORCH_VERSION} https://github.com/pytorch/pytorch pytorch-${TORCH_VERSION}
+     	git clone --recursive -b v${TORCH_VERSION} https://github.com/pytorch/pytorch ${BLD_DIR}
 	if [ -d ${BLD_DIR} ]; then
 		cd ${BLD_DIR}
 		# if you are updating an existing checkout
@@ -60,16 +72,25 @@ LDFLAGS=$LDFLAGS python setup.py install --prefix=$PREFIX
 }
 
 
-ARG=$1
-if [ ${ARG} = "all" ] || [ "${ARG}x" = "x" ]
+if [ ${ACTION} = "all" ]
  then
 	set_env
 	get_source
 	build
-elif [ ${ARG} = "build" ] 
+elif [ ${ACTION} = "build" ] 
  then
 	set_env
 	build
+elif [ ${ACTION} = "dryrun" ]
+ then
+	echo $TORCH_VERSION
+	echo $BLD_DIR
+	echo $PREFIX
+	echo $MODULEPATH
+
+else 
+	echo "Unrecognized ACTION"
+	exit
 fi
 
 
