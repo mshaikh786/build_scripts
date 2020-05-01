@@ -7,6 +7,8 @@ export PREFIX="/ibex/scratch/shaima0d/software/apps/horovod/${HOROVOD_VERSION}"
 function set_env(){
 	module load /sw/hidden/modulefiles/compilers/python/3.6.2
 	module load pytorch/1.3.1
+	module load cmake
+	module list
 }
 
 function get_source(){
@@ -23,18 +25,22 @@ function get_source(){
 function build(){
 	#tar xvf ${TARBALL}
 	cd ${BLD_DIR}
+	export CC=mpicc CXX=mpicxx
 	export HOROVOD_NCCL_INCLUDE=${NCCL_HOME}/include
 	export HOROVOD_NCCL_LIB=${NCCL_HOME}/lib
+	export HOROVOD_WITH_MPI=1
 	export HOROVOD_CUDA_HOME=${CUDATOOLKIT_HOME}
-	export HOROVOD_GPU_ALLREDUCE=NCCL HOROVOD_GPU_BROADCAST=NCCL
+	export HOROVOD_GPU_ALLREDUCE=NCCL HOROVOD_GPU_BROADCAST=NCCL HOROVOD_GPU_ALLGATHER=MPI
+	export HOROVOD_ALLOW_MIXED_GPU_IMPL=0
 	export HOROVOD_WITH_PYHOROVOD=1 
 	export HOROVOD_WITHOUT_TENSORFLOW=1
 	export HOROVOD_WITHOUT_MXNET=1
 	export HOROVOD_WITHOUT_GLOO=1
-	export MAX_JOBS=20
-	python setup.py build --verbose
+	export MAX_JOBS=1
+	
+	mkdir -p ${PREFIX}/lib/python3.6/site-packages
 	export PYTHONPATH=${PREFIX}/lib/python3.6/site-packages:$PYTHONPATH
-	python setup.py install --skip-build --prefix=$PREFIX
+	python setup.py install --prefix=$PREFIX
 }
 
 ARG=$1
