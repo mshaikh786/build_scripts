@@ -66,9 +66,10 @@ if [ $? -eq 0 ]
    	make -j 32 VERBOSE=1
 fi
 cd ${BLD_DIR}
-export PYTHONPATH=$PREFIX/lib/python3.7/site-packages:$PYTHONPATH
 LDFLAGS=$(echo -L${BLD_DIR}/build/lib)
 LDFLAGS=$LDFLAGS python setup.py install --prefix=$PREFIX
+ln -s $PREFIX/bin $PREFIX/lib/python3.7/site-packages/torch/bin
+ln -s $PREFIX/include/* $PREFIX/lib/python3.7/site-packages/torch/include/
 }
 
 
