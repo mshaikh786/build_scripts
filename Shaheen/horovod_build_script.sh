@@ -43,7 +43,9 @@ function build(){
 	if [ -d "./build" ]; then
 		rm -rf build
 	fi
+	export CRAYPE_LINK_TYPE=dynamic
 	export CC=cc CXX=CC MPICC=cc MPICXX=CC
+	export LIBS="ldmapp"
 	export HOROVOD_MPICXX_SHOW="CC --cray-print-opts=all"
 	export HOROVOD_WITH_MPI=1
 	export HOROVOD_WITH_PYTORCH=1

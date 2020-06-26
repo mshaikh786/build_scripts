@@ -18,8 +18,9 @@ export MODULEPATH=$MODULEPATH_PREPEND:$MODULEPATH
 
 function set_env {
 module load cmake
-module swap PrgEnv-$(echo ${PE_ENV}|tr [:upper:] [:lower:]) PrgEnv-gnu
-module load mkl
+module swap PrgEnv-$(echo ${PE_ENV}|tr [:upper:] [:lower:]) PrgEnv-intel
+module swap intel  intel/19.1.0.166
+module unload cray-libsci
 module load intel-python
 module load cray-fftw
 module list
@@ -51,25 +52,29 @@ cd build
 
 cmake -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC FC=ftn MPICC=cc MPICXX=CC \
 	-DUSE_NATIVE_ARCH=OFF -DUSE_CUDA=OFF -DUSE_CUDNN=OFF -DUSE_SYSTEM_NCCL=OFF\
-	-DUSE_OPENMP=ON  -DUSE_MKLDNN_CBLAS=ON -DBLAS=MKL -DUSE_QNNPACK=ON -DUSE_FBGEMM=ON\
-	-DUSE_DISTRIBUTED=OFF  -DUSE_MKLDNN=ON \
+	-DUSE_OPENMP=ON  -DUSE_MKLDNN_CBLAS=ON -DBLAS=MKL -DUSE_QNNPACK=OFF -DUSE_FBGEMM=OFF\
+	-DUSE_PYTORCH_QNNPACK=OFF -DUSE_DISTRIBUTED=ON  -DUSE_MKLDNN=ON \
 	-DINTEL_MKL_DIR=$MKLROOT -DUSE_GLOO=OFF -DUSE_ROCM=OFF \
 	-DCMAKE_C_FLAGS="-craype-verbose" -DCMAKE_CXX_FLAGS="-craype-verbose" \
 	-DPYTORCH_BUILD_VERSION='1.3.1' -DPYTORCH_BUILD_NUMBER=1 \
-	-DBUILD_PYTHON=ON \
 	-DFFTW3_INCLUDE_DIR='/opt/cray/pe/fftw/3.3.8.4/haswell/include' -DLIBFFTW3='/opt/cray/pe/fftw/3.3.8.4/haswell/lib' \
+	-DBUILD_PYTHON=ON \
 	-DCMAKE_INSTALL_PREFIX=$PREFIX \
 	..
-files=$(grep -r isystem . |cut -d ':' -f 1) && echo $files | xargs sed -i 's;-isystem\ \/;-I\/;g' $files
+
 if [ $? -eq 0 ]
    then
+	files=$(grep -r isystem . |cut -d ':' -f 1) && echo $files | xargs sed -i 's;-isystem\ \/;-I\/;g' $files
    	make -j $MAX_JOBS VERBOSE=1
 fi
 cd ${BLD_DIR}
-LDFLAGS=$(echo -L${BLD_DIR}/build/lib)
-LDFLAGS=$LDFLAGS python setup.py install --prefix=$PREFIX
-ln -s $PREFIX/bin $PREFIX/lib/python3.7/site-packages/torch/bin
-ln -s $PREFIX/include/* $PREFIX/lib/python3.7/site-packages/torch/include/
+if [ $? -eq 0 ] 
+    then
+	LDFLAGS=$(echo -L${BLD_DIR}/build/lib)
+	LDFLAGS=$LDFLAGS python setup.py install --prefix=$PREFIX
+	ln -s $PREFIX/bin $PREFIX/lib/python3.7/site-packages/torch/bin
+	ln -s $PREFIX/include/* $PREFIX/lib/python3.7/site-packages/torch/include/
+fi
 }
 
 
@@ -84,10 +89,11 @@ elif [ ${ACTION} = "build" ]
 	build
 elif [ ${ACTION} = "dryrun" ]
  then
-	echo $TORCH_VERSION
-	echo $BLD_DIR
-	echo $PREFIX
-	echo $MODULEPATH
+	echo TORCH_VERSION=$TORCH_VERSION
+	echo BLD_DIR=$BLD_DIR
+	echo PREFIX=$PREFIX
+	echo MODULEPATH=$MODULEPATH
+	echo MAX_JOBS=$MAX_JOBS
 
 else 
 	echo "Unrecognized ACTION"
