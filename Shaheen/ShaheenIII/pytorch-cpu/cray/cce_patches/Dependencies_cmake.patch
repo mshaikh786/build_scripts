@@ -1,0 +1,37 @@
+--- pytorch-2.2.1/cmake/Dependencies.cmake	2024-08-01 20:00:30.389422000 +0300
++++ /scratch/project/v10002/sw/src/pytorch-221-cce-clang-1601/pytorch-2.2.1/cmake/Dependencies.cmake	2024-08-03 00:28:26.000000000 +0300
+@@ -193,6 +193,13 @@
+   set(BLAS_INFO "atlas")
+   set(BLAS_FOUND 1)
+   set(BLAS_LIBRARIES ${ATLAS_LIBRARIES} cblas)
++elseif(BLAS STREQUAL "CRAY")
++  set(BLAS_INCLUDE_DIR "$ENV{CRAY_LIBSCI_PREFIX_DIR}/include") 
++  set(BLAS_LIBRARIES "sci_cray")  
++  include_directories(${BLAS_INCLUDE_DIR})
++  list(APPEND Caffe2_DEPENDENCY_LIBS ${BLAS_LIBRARIES})
++  set(BLAS_INFO "CRAY")
++  set(BLAS_FOUND 1)
+ elseif(BLAS STREQUAL "OpenBLAS")
+   find_package(OpenBLAS REQUIRED)
+   include_directories(SYSTEM ${OpenBLAS_INCLUDE_DIR})
+@@ -242,6 +249,7 @@
+   # On Debian family, the CBLAS ABIs have been merged into libblas.so
+   if(ENV{GENERIC_BLAS_LIBRARIES} STREQUAL "")
+     set(GENERIC_BLAS "blas")
++    set()
+   else()
+     set(GENERIC_BLAS $ENV{GENERIC_BLAS_LIBRARIES})
+   endif()
+@@ -259,9 +267,11 @@
+   set(AT_MKL_ENABLED 0)
+   set(AT_MKL_SEQUENTIAL 0)
+   set(USE_BLAS 1)
+-  if(NOT (ATLAS_FOUND OR BLIS_FOUND OR GENERIC_BLAS_FOUND OR MKL_FOUND OR OpenBLAS_FOUND OR VECLIB_FOUND OR FlexiBLAS_FOUND))
++  if(NOT (ATLAS_FOUND OR BLIS_FOUND OR GENERIC_BLAS_FOUND OR MKL_FOUND OR OpenBLAS_FOUND OR VECLIB_FOUND OR FlexiBLAS_FOUND OR CRAY_FOUND))
+     message(WARNING "Preferred BLAS (" ${BLAS} ") cannot be found, now searching for a general BLAS library")
+     find_package(BLAS)
++    message("BLAS_LIBRARIES ${BLAS_LIBRARIES}")
++    message("BLAS_INCLUDE_DIR ${BLAS_INCLUDE_DIR}")
+     if(NOT BLAS_FOUND)
+       set(USE_BLAS 0)
+     endif()

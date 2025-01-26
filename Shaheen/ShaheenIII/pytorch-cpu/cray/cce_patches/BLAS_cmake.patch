@@ -1,0 +1,17 @@
+--- ./pytorch-2.2.1/cmake/Modules/FindBLAS.cmake	2024-08-01 20:00:30.574422000 +0300
++++ cce_patches/FindBLAS.cmake	2024-10-02 23:25:28.656397000 +0300
+@@ -105,6 +105,14 @@
+   ENDIF(MKL_FOUND)
+ endif()
+ 
++# Cray Libsci?
++if((NOT BLAS_LIBRARIES))
++  SET(BLAS_INFO "CRAY")
++  SET(BLAS_LIBRARIES "sci_cray" "sci_cray_mp" "sci_cray_mpi" "sci_cray_mpi_mp") 
++  SET(BLAS_INCLUDE_DIR "$$ENV{CRAY_LIBSCI_PREFIX_DIR}/include")
++  SET(BLAS_VERSION ${CRAY_LIBSCI_VERSION})
++  SET(CRAY_FOUND 1)
++endif()
+ #BLIS?
+ if((NOT BLAS_LIBRARIES)
+     AND ((NOT WITH_BLAS) OR (WITH_BLAS STREQUAL "blis")))

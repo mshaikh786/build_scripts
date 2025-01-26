@@ -1,0 +1,11 @@
+--- FindOpenMP.cmake	2024-08-01 20:00:30.784426000 +0300
++++ /scratch/project/v10002/sw/src/pytorch-221-cce-clang-1601/pytorch-2.2.1/cmake/Modules/FindOpenMP.cmake	2024-08-03 00:35:45.000000000 +0300
+@@ -256,7 +256,7 @@
+ 
+     if (NOT OpenMP_libomp_LIBRARY)
+       find_library(OpenMP_libomp_LIBRARY
+-        NAMES omp gomp iomp5
++        NAMES craymp omp gomp iomp5
+         HINTS ${CMAKE_${LANG}_IMPLICIT_LINK_DIRECTORIES}
+         DOC "libomp location for OpenMP"
+       )
