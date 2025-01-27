@@ -1,0 +1,4 @@
+124c124
+< 
+---
+> SET(PYTHON_SIX_SOURCE_DIR "/sw/sources/six/")

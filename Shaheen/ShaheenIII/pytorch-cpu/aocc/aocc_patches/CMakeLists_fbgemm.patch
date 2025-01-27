@@ -1,0 +1,4 @@
+192c192
+<   string(APPEND CMAKE_CXX_FLAGS " -Werror")
+---
+>   #string(APPEND CMAKE_CXX_FLAGS " -Werror")
